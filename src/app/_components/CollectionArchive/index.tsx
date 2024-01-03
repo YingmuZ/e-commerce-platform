@@ -5,6 +5,7 @@ import qs from 'qs'
 
 import type { Product } from '../../../payload/payload-types'
 import type { ArchiveBlockProps } from '../../_blocks/ArchiveBlock/types'
+import { useFilter } from '../../_providers/Filter'
 import { Card } from '../Card'
 import { Gutter } from '../Gutter'
 import { PageRange } from '../PageRange'
@@ -38,8 +39,8 @@ export type Props = {
 }
 
 export const CollectionArchive: React.FC<Props> = props => {
+  const { categoryFilters, sort } = useFilter()
   const {
-    categories: catsFromProps,
     className,
     limit = 10,
     onResultChange,
@@ -47,18 +48,11 @@ export const CollectionArchive: React.FC<Props> = props => {
     populatedDocs,
     populatedDocsTotal,
     relationTo,
-    selectedDocs,
     showPageRange,
-    sort = '-createdAt',
   } = props
 
   const [results, setResults] = useState<Result>({
-    docs: (populateBy === 'collection'
-      ? populatedDocs
-      : populateBy === 'selection'
-      ? selectedDocs
-      : []
-    )?.map(doc => doc.value),
+    docs: (populatedDocs?.map(doc => doc.value) || []) as [],
     hasNextPage: false,
     hasPrevPage: false,
     nextPage: 1,
@@ -74,8 +68,6 @@ export const CollectionArchive: React.FC<Props> = props => {
   const hasHydrated = useRef(false)
   const isRequesting = useRef(false)
   const [page, setPage] = useState(1)
-
-  const categories = (catsFromProps || []).map(cat => cat.id).join(',')
 
   const scrollToRef = useCallback(() => {
     const { current } = scrollRef
@@ -114,10 +106,10 @@ export const CollectionArchive: React.FC<Props> = props => {
           page,
           sort,
           where: {
-            ...(categories
+            ...(categoryFilters
               ? {
-                  categories: {
-                    in: categories,
+                  categoryFilters: {
+                    in: categoryFilters,
                   },
                 }
               : {}),
@@ -160,7 +152,7 @@ export const CollectionArchive: React.FC<Props> = props => {
     return () => {
       if (timer) clearTimeout(timer)
     }
-  }, [page, categories, relationTo, onResultChange, sort, limit, populateBy])
+  }, [page, categoryFilters, relationTo, onResultChange, sort, limit, populateBy])
 
   return (
     <div className={[classes.collectionArchive, className].filter(Boolean).join(' ')}>
